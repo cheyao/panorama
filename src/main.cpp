@@ -13,32 +13,23 @@
 #include <ctime>
 #include <stdexcept>
 #include <string>
-#include <system_error>
 
-int SDL_AppInit(void** appstate, int argc, char** argv) {
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv) {
 	if (argc != 2) {
 		SDL_Log("Usage: ./Panorama [file]");
-		return 1;
+		return SDL_APP_FAILURE;
 	}
 
 	std::srand(std::time(nullptr));
 
 	SDL_Log("Initializing game\n");
 
-#ifdef X11
-	SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
-#endif
 	SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft");
-#ifdef GLES
-	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles");
-#else
-	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-#endif
 
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMEPAD) != 0) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMEPAD)) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO, "Failed to init SDL: %s\n", SDL_GetError());
 		ERROR_BOX("Failed to initialize SDL, there is something wrong with your system");
-		return 1;
+		return SDL_APP_FAILURE;
 	}
 
 	try {
@@ -47,25 +38,31 @@ int SDL_AppInit(void** appstate, int argc, char** argv) {
 		SDL_Log("Error: %s", e.what());
 	} catch (...) {
 		SDL_Log("Uncaught exception");
-		return 1;
+		return SDL_APP_FAILURE;
 	}
 
-	SDL_SetRelativeMouseMode(1);
-
-	return 0;
+	return SDL_APP_CONTINUE;
 }
 
-int SDL_AppEvent(void* appstate, const SDL_Event* event) {
-	return static_cast<Game*>(appstate)->event(*event);
+SDL_AppResult SDL_AppEvent(void* appstate, const SDL_Event* event) {
+	if (static_cast<Game*>(appstate)->event(*event)) {
+		return SDL_APP_FAILURE;
+	} else {
+		return SDL_APP_CONTINUE;
+	}
 }
 
 #ifdef DEBUG
 #include <filesystem>
 #endif
 
-int SDL_AppIterate(void* appstate) {
+SDL_AppResult SDL_AppIterate(void* appstate) {
 	try {
-		return static_cast<Game*>(appstate)->iterate();
+		if (static_cast<Game*>(appstate)->iterate()) {
+			return SDL_APP_FAILURE;
+		} else {
+			return SDL_APP_CONTINUE;
+		}
 	}
 #ifdef DEBUG
 	catch (const std::filesystem::filesystem_error& error) {
@@ -78,9 +75,7 @@ int SDL_AppIterate(void* appstate) {
 		SDL_Log("code().message():  %s", error.code().message().data());
 		SDL_Log("code().category(): %s", error.code().category().name());
 
-		// static_cast<Game*>(appstate)->pause();
-
-		return 0;
+		return SDL_APP_CONTINUE;
 	}
 #endif
 	catch (const std::runtime_error& error) {
@@ -89,11 +84,11 @@ int SDL_AppIterate(void* appstate) {
 
 		static_cast<Game*>(appstate)->pause();
 
-		return 0;
+		return SDL_APP_CONTINUE;
 #else
 		ERROR_BOX("Exception thrown, the game might not function correctly");
 
-		return 0;
+		return SDL_APP_CONTINUE;
 #endif
 	}
 }

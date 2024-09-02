@@ -39,15 +39,6 @@ Game::Game(std::string pano)
 
 	mRenderer = new Renderer(this);
 
-	// TODO: Icon
-	/*
-	SDL_Surface *icon = IMG_Load("assets/icon.png");
-	SDL_SetWindowIcon(mWindow, icon);
-	SDL_backpackShaderroySurface(icon);
-	*/
-
-	SDL_SetRelativeMouseMode(1);
-
 	new World(this, pano);
 
 	setup();
@@ -75,7 +66,6 @@ int Game::iterate() {
 	if (mPaused) {
 		mTicks = SDL_GetTicks();
 
-		SDL_SetRelativeMouseMode(0);
 		SDL_Delay(64);
 
 		return 0;
@@ -249,7 +239,6 @@ int Game::event(const SDL_Event& event) {
 			}
 			if (event.key.key == SDLK_F1) {
 				rel = !rel;
-				SDL_SetRelativeMouseMode(static_cast<int>(rel));
 			}
 			if (event.key.key == SDLK_F2) {
 #ifdef DEBUG

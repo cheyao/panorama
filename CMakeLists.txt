@@ -157,18 +157,15 @@ include_directories(include)
 if(NOT ANDROID)
 	if(WEB)
 		find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-static)
-		# find_package(SDL3_image REQUIRED CONFIG REQUIRED COMPONENTS SDL3_image-static)
 
 		set(CMAKE_EXECUTABLE_SUFFIX .js)
 		
 		configure_file(cmake/index.html.in ${CMAKE_BINARY_DIR}/index.html)
 	elseif(VENDOR)
 		add_subdirectory(external/SDL3 EXCLUDE_FROM_ALL)
-		# add_subdirectory(external/SDL3_image EXCLUDE_FROM_ALL)
 	else()
 		find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
 		find_package(SDL3 REQUIRED CONFIG REQUIRED)
-		# find_package(SDL3_image REQUIRED CONFIG REQUIRED COMPONENTS SDL3_image-shared)
 
 		if(MACOSX AND NOT DEBUG)
 			message("Building for MacOS, did you use -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64?")
